@@ -1,5 +1,5 @@
 # 爬取奇摩電影資訊
-# 程式撰寫: 中山財管所 研究助理 蘇彥庭
+# 程式撰寫: 蘇彥庭
 library(rvest)
 library(dplyr)
 library(xlsx)
@@ -86,7 +86,6 @@ for(ix in 1:nrow(movieData)){
   download.file(movieData$imgLink[ix], 
                 destfile=paste0("./movieData/graph/",movieData$movieGraphName[ix],".jpg"), 
                 mode="wb")
-  Sys.sleep(1)
   
   # 下載電影詳細資料
   url <- movieData$movieLink[ix]
@@ -105,8 +104,6 @@ for(ix in 1:nrow(movieData)){
   
   # 電影摘要
   movieData$movieAbstract[ix] <- movieDetail[4] %>% gsub("詳全文", "", .)
-
-  Sys.sleep(1)
 }
 
 # 寫出檔案

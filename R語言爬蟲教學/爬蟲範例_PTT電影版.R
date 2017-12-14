@@ -15,13 +15,13 @@ pageNum <- read_html(url, encoding = "utf-8") %>%
   as.numeric()
 
 # 讀取頁數
-pageRead <- 100  
+pageRead <- 200  
 
 # 建立文章連結表
 articleTable <- NULL
 
 # 迴圈翻取各頁各文章的連結
-for(page in seq((pageNum-pageRead+1), pageNum, 1)){
+for(page in seq((pageNum-pageRead), (pageNum+1), 1)){
   
   cat(paste0("目前正在讀取第 ",page," 個頁面，進度: ",page," / ",pageNum,"\n"))
   
@@ -50,7 +50,7 @@ for(page in seq((pageNum-pageRead+1), pageNum, 1)){
     html_text()
   
   # 移除文章已被刪除項目
-  removeSite <- grep("刪除",title)
+  removeSite <- grep("\\刪除)",title)
   if(length(removeSite)>0){
     articleDate <- articleDate[-removeSite]
     title <- title[-removeSite]
