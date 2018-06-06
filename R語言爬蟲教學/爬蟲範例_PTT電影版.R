@@ -3,8 +3,10 @@
 rm(list=ls());gc()
 library(rvest)
 library(dplyr)
+library(RMySQL)
+library(xlsx)
 
-# 首先連結股市版首頁
+# 首先連結電影版首頁
 url <- "https://www.ptt.cc/bbs/movie/index.html"
 
 # 利用上一頁面的連結推斷目前在第幾頁
@@ -15,7 +17,7 @@ pageNum <- read_html(url, encoding = "utf-8") %>%
   as.numeric()
 
 # 讀取頁數
-pageRead <- 200  
+pageRead <- 300  
 
 # 建立文章連結表
 articleTable <- NULL
@@ -60,9 +62,39 @@ for(page in seq((pageNum-pageRead), (pageNum+1), 1)){
   articleTable <- bind_rows(articleTable, tibble(articleDate, title, link))
   
   # 暫停延緩
-  Sys.sleep(0.5)
+  Sys.sleep(0.1)
+}
+
+# 判斷文章類別
+movieData <- read.xlsx("./movieData/電影資訊.xlsx", sheetIndex=1, encoding="UTF-8", stringsAsFactors=FALSE) %>% 
+  as_data_frame()
+movieName <- movieData$movieName
+
+# 迴圈電影名稱進行聲量分析
+articleTable$movie <- rep("NULL", nrow(articleTable))
+for(ix in 1:nrow(movieData)){
+  
+  # 聲量分析電影名稱
+  movieName <- movieData$movieName[ix]
+  
+  # 相關文章
+  relativeTitle <- articleTable$title[grep(movieName, articleTable$title)]
+  
+  # 於ptt文章後面紀錄
+  articleTable$movie[articleTable$title %in% relativeTitle] <- movieName
 }
 
 # 儲存檔案
 save(articleTable, file="./movieData/pttMovieArticle.Rdata")
+
+# 寫入資料庫
+filePath <- "C:/Users/Su-Yen-Ting/Desktop"
+con <- dbConnect(dbDriver("MySQL"), host="140.117.70.217",user='yen_ting',password='quant')
+write.table(articleTable, paste0(filePath,"/article_data.txt"),
+            sep = "\t",row.names = FALSE,col.names = FALSE,quote = FALSE,fileEncoding ="utf8")
+dbSendQuery(con,"SET SQL_SAFE_UPDATES=0;")
+dbSendQuery(con,"TRUNCATE movie.article_data;")
+dbSendQuery(con, paste0("load data local infile '",filePath,"/article_data.txt' into table movie.article_data LINES TERMINATED BY '\r\n';"))
+dbDisconnect(con)
+
 

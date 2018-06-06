@@ -3,6 +3,7 @@
 library(rvest)
 library(dplyr)
 library(xlsx)
+library(RMySQL)
 
 # 建立儲存表
 movieData <- NULL  
@@ -73,18 +74,24 @@ movieData$movieGraphName <- iconv(movieData$movieName, from="utf8", to="big5", s
   gsub("/","", .)
 
 # 建立儲存表
-movieData$movieLength <- rep(NA, nrow(movieData))     # 電影片長
-movieData$movieDirector <- rep(NA, nrow(movieData))   # 電影導演
-movieData$movieActor <- rep(NA, nrow(movieData))      # 電影演員
-movieData$movieAbstract <- rep(NA, nrow(movieData))   # 電影摘要
+movieData$movieLength <- rep(NA, nrow(movieData))       # 電影片長
+movieData$movieDirector <- rep(NA, nrow(movieData))     # 電影導演
+movieData$movieActor <- rep(NA, nrow(movieData))        # 電影演員
+movieData$movieAbstract <- rep(NA, nrow(movieData))     # 電影摘要
+movieData$movieType1 <- rep(NA, nrow(movieData))        # 電影類型1
+movieData$movieType2 <- rep(NA, nrow(movieData))        # 電影類型2
+movieData$movieType3 <- rep(NA, nrow(movieData))        # 電影類型3
+movieData$movieType4 <- rep(NA, nrow(movieData))        # 電影類型4
+movieData$movieType5 <- rep(NA, nrow(movieData))        # 電影類型5
+movieData$moviePreviewLink <- rep(NA, nrow(movieData))  # 電影連結
 
 # 下載電影圖片及詳細資料
 for(ix in 1:nrow(movieData)){
   
   # 下載電影圖片
   cat(paste0("正在下載第",ix,"個電影海報圖，進度：",ix," / ",nrow(movieData),"\n"))
-  download.file(movieData$imgLink[ix], 
-                destfile=paste0("./movieData/graph/",movieData$movieGraphName[ix],".jpg"), 
+  download.file(movieData$imgLink[ix],
+                destfile=paste0("./movieData/graph/",movieData$movieGraphName[ix],".jpg"),
                 mode="wb")
   
   # 下載電影詳細資料
@@ -104,9 +111,50 @@ for(ix in 1:nrow(movieData)){
   
   # 電影摘要
   movieData$movieAbstract[ix] <- movieDetail[4] %>% gsub("詳全文", "", .)
+  
+  # 電影類型
+  movieType <- read_html(url, encoding = "utf-8") %>%
+    html_nodes(css=".level_name .gabtn") %>%  
+    html_text() %>% 
+    gsub(" ", "", .) %>% 
+    gsub("\n", "", .)
+  movieData$movieType1[ix] <- movieType[1]
+  movieData$movieType2[ix] <- movieType[2]
+  movieData$movieType3[ix] <- movieType[3]
+  movieData$movieType4[ix] <- movieType[4]
+  movieData$movieType5[ix] <- movieType[5]
+  
+  # 電影預告連結
+  moviePreviewLink <- read_html(url, encoding= "utf-8") %>%
+    html_nodes(css=".select+ li .gabtn") %>%  
+    html_attr("href") %>%
+    strsplit("\\?") %>%
+    unlist() %>%
+    .[1] %>%
+    paste0("?format=embed")
+  movieData$moviePreviewLink[ix] <- moviePreviewLink
 }
 
 # 寫出檔案
 write.xlsx(movieData, file=paste0("./movieData/電影資訊.xlsx"))
+
+# 摘要資料清理
+movieData$movieAbstract <- gsub("\n","",movieData$movieAbstract)
+movieData$movieAbstract <- gsub("\r","",movieData$movieAbstract)
+movieData$movieAbstract <- gsub(" ","",movieData$movieAbstract)
+movieData$movieAbstract <- gsub("<U+00A0>","",movieData$movieAbstract)
+
+# 資料連結整理
+movieData$moviePreviewLink[which(movieData$moviePreviewLink=="?format=embed")] <- NA
+
+# 寫入資料庫
+filePath <- "C:/Users/Su-Yen-Ting/Desktop"
+con <- dbConnect(dbDriver("MySQL"), host="140.117.70.217",user='yen_ting',password='quant')
+write.table(movieData, paste0(filePath,"/movie_data.txt"),
+            sep = "\t",row.names = FALSE,col.names = FALSE,quote = FALSE,fileEncoding ="utf8")
+dbSendQuery(con,"SET SQL_SAFE_UPDATES=0;")
+dbSendQuery(con,"TRUNCATE movie.movie_data;")
+dbSendQuery(con, paste0("load data local infile '",filePath,"/movie_data.txt' into table movie.movie_data LINES TERMINATED BY '\r\n';"))
+dbDisconnect(con)
 
 

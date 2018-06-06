@@ -3,6 +3,7 @@
 rm(list=ls());gc()
 library(dplyr)
 library(xlsx)
+library(RMySQL)
 
 # 讀取電影資訊表(爬蟲範例_奇摩電影資訊.R程式結果)
 movieData <- read.xlsx("./movieData/電影資訊.xlsx", sheetIndex=1, encoding="UTF-8") %>% as_data_frame()
@@ -45,6 +46,16 @@ for(ix in 1:nrow(movieData)){
 analysisResult <- textAnalysis %>%
   filter(relativeRatio>0.005) %>%
   arrange(desc(goodRatio))
+
+# 寫入資料庫
+filePath <- "C:/Users/Su-Yen-Ting/Desktop"
+con <- dbConnect(dbDriver("MySQL"), host="140.117.70.217",user='yen_ting',password='quant')
+write.table(textAnalysis, paste0(filePath,"/volume_analysis.txt"),
+            sep = "\t",row.names = FALSE,col.names = FALSE,quote = FALSE,fileEncoding ="utf8")
+dbSendQuery(con,"SET SQL_SAFE_UPDATES=0;")
+dbSendQuery(con,"TRUNCATE movie.volume_analysis;")
+dbSendQuery(con, paste0("load data local infile '",filePath,"/volume_analysis.txt' into table movie.volume_analysis LINES TERMINATED BY '\r\n';"))
+dbDisconnect(con)
 
 
 
