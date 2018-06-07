@@ -3,8 +3,10 @@ title: "Tidyquant套件介紹"
 author:
   - "指導教授: 中山大學財務管理學系 王昭文 教授"
   - "文章撰寫: 中山大學財務管理學系 蘇彥庭 研究助理"
-date: "2018年6月6日"
-output: html_document
+date: "2018年6月7日"
+output: 
+  html_document:
+    keep_md: true
 css: css_config.css
 ---
 
@@ -20,7 +22,7 @@ R語言在財務領域中，常用到的套件大概有下列幾個：
 
 * [xts](https://cran.r-project.org/web/packages/xts/xts.pdf)/[zoo](https://cran.r-project.org/web/packages/zoo/zoo.pdf): 處理時間序列之套件。
 * [TTR](https://cran.r-project.org/web/packages/TTR/TTR.pdf): 計算金融資產技術指標之套件。
-* [quantmod](https://cran.r-project.org/web/packages/quantmod/quantmod.pdf): 金融資產技術分析回測套件，可至[Yahoo Finance](https://finance.yahoo.com/)或[Google Finance](https://finance.google.com/)下載歷史股價數據。並且整合`TTR`套件，繪製出漂亮的技術分析圖析。
+* [quantmod](https://cran.r-project.org/web/packages/quantmod/quantmod.pdf): 金融資產技術分析回測套件，可至[Yahoo Finance](https://finance.yahoo.com/)或[Google Finance](https://finance.google.com/)下載歷史股價數據或其他金融相關數據。並且整合`TTR`套件，繪製出漂亮的技術分析圖析。
 * [PerformanceAnalytics](https://cran.r-project.org/web/packages/PerformanceAnalytics/PerformanceAnalytics.pdf): 計算金融資產報酬績效指標之套件。
 
 現在的R語言在資料科學的浪潮之下，資料數據格式已走向[tidy data](https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html)形式。[tidyverse](https://www.tidyverse.org/)套件已是每位R使用者必學的套件，使用此套件讓資料整理的程式碼簡潔又快速，讓R語言的方便性邁向更高一層。然而在財務領域的套件，目前皆是以時間序列資料格式(xts)為基礎建構而成。意即要使用這些套件的函數時，需要先將資料先轉為xts格式，才能做財務分析。若要在`tidyverse`套件中使用這些財務領域套件的函數，會有許多限制，需要做額外的整理才能使用，非常不方便。
@@ -48,7 +50,16 @@ knitr::include_graphics("tidyquant示意圖.png")
 
 ## 數據下載
 
-做股市分析的第一步就是要取得股價資料，`tidyquant`套件的`tq_get()`函數整合`quantmod`套件的`getSymbols()`函數。透過`tq_get()`函數可以一次下載多檔股票，並且以`tibble`格式儲存資料，讓後續的資料處理更加方便。此處示範如何下載2017/06/01至2018/05/31，鴻海(2317.TW)、台積電(2330.TW)及中華電信(2412.TW)及臺灣加權指數(^TWII)的歷史價格資料，資料下載來源為[Yahoo Finance](https://finance.yahoo.com/)。
+做股市分析的第一步就是要取得股價資料，`tidyquant`套件的`tq_get()`函數整合`quantmod`套件的`getSymbols()`函數。透過`tq_get()`函數可以從網路上一次下載多檔股票資料，並且以`tibble`格式儲存資料，讓後續的資料處理更加方便。此處示範如何下載2017/06/01至2018/05/31，鴻海、台積電、中華電信及臺灣加權指數的歷史價格資料。在`tq_get()`函數內的引數為:
+
+1. x: 金融資產的代碼，需配合資料源。
+2. get: 資料下載來源，此處我們設定參數為`stock.price`，從[Yahoo Finance](https://finance.yahoo.com/)下載歷史股價資料。
+3. from: 資料下載起始日。
+4. to: 資料下載結束日。
+
+`tq_get()`函數可下載的資料來源相當多，除了股價資料外，也有財務比率指標([Morningstar](https://www.morningstar.com/))、股利股息資料([Yahoo Finance](https://finance.yahoo.com/))及總經資料([FRED](https://fred.stlouisfed.org/))等，只要修改函數內的`get`參數即可取得。詳細內容可參考原作者的說明文件：[Core Functions in tidyquant](https://cran.r-project.org/web/packages/tidyquant/vignettes/TQ01-core-functions-in-tidyquant.html#get-quantitative-data)。
+
+我們在[Yahoo Finance](https://finance.yahoo.com/)要下載的股票代碼為：鴻海(2317.TW)、台積電(2330.TW)及中華電信(2412.TW)及臺灣加權指數(^TWII)，程式碼寫法如下:
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
@@ -56,14 +67,14 @@ knitr::include_graphics("tidyquant示意圖.png")
 library(tidyquant)
 
 # 下載資料
-stockData <- c("^TWII", "2330.TW", "2317.TW", "2412.TW") %>%
+stockData <- c("^TWII", "2317.TW", "2330.TW", "2412.TW") %>%
   tq_get(get = "stock.price", from = "2017-06-01", to = "2018-05-31")
 
 # 觀看資料
 stockData
 ```
 
-簡單的兩行程式碼就可以下載多檔股票歷史數據，並整理成tibble資料格式，與`quantmod`套件的`getSymbols()`函數相比真的是方便很多。
+簡單的兩行程式碼就可以下載多檔股票歷史數據，並整理成tibble資料格式，與`quantmod`套件的`getSymbols()`函數相比真的是方便很多。然而有一個問題是，[Yahoo Finance](https://finance.yahoo.com/)在台灣股市的資料維護其實並不太好。從上面下載的股價資料中，可以發現2017-06-03是以缺值資料紀錄，當日台股為端午節連假周六補交易日，[Yahoo Finance](https://finance.yahoo.com/)的資料庫卻沒有記錄到，這明顯是有問題的。所以我們在做台灣股市的量化資料分析時，並不會直接從網路上下載資料，會直接從財務資料庫來取得資料，確保資料品質。下一小節將說明如何讀入外部資料，並整理成`tidyquant`套件能使用的格式。
 
 --------------------------------------------------
 
@@ -113,10 +124,10 @@ stockData
 
 此小節示範如何撰寫技術指標，主要是利用`tq_mutate()`函數，其引數依序為:
 
-1. data: 資料集
-2. select: 選擇計算技術指標函數會使用到的資料欄位
-3. mutate_fun: 選擇要用的技術指標函數(`TTR`套件)
-4. 技術指標函數之參數設定
+1. data: 資料集。
+2. select: 選擇計算技術指標函數會使用到的資料欄位。
+3. mutate_fun: 選擇要用的技術指標函數(`TTR`套件)。
+4. 技術指標函數之參數設定。
 
 透過`group_by()`函數搭配`tq_mutate()`函數以及`TTR`套件的技術指標函數，即可用簡潔的程式碼快速地計算出各支股票的技術指標值。以下為計算5日簡單移動平均線範例：
 
@@ -133,8 +144,9 @@ stockData <- stockData %>%
   
 # 觀看資料
 stockData %>% 
-  select(code, date, ma5) %>% 
-  arrange(code, date)
+  select(code, date, close, ma5) %>% 
+  arrange(code, date) %>%
+  na.omit()
 ```
 
 如果要再算10日及20日簡單移動平均線，則繼續向後新增`tq_mutate()`:
@@ -157,8 +169,9 @@ stockData <- stockData %>%
 
 # 觀看資料
 stockData %>% 
-  select(code, date, ma10:ma20) %>% 
-  arrange(code, date)
+  select(code, date, close, ma10:ma20) %>% 
+  arrange(code, date) %>%
+  na.omit()
 ```
 
 若要計算隨機指標，寫法為:
@@ -177,7 +190,8 @@ stockData <- stockData %>%
 # 觀看資料
 stockData %>% 
   select(code, date, fastK:stoch) %>% 
-  arrange(code, date)
+  arrange(code, date) %>%
+  na.omit()
 ```
 
 `tq_mutate()`函數內的`nFastK`、`nFastD`及`nSlowD`引數即為原`TTR`套件`stoch()`的引數。從上面的資料表可以發現，透過`tq_mutate()`函數，可將`TTR`套件`stoch()`函數跑出的3個欄位結果(`fastK`、`fastD`及`stoch`)全部新增在`stockData`資料表內。若沒有`tq_mutate()`這個函數，用`mutate()`函數計算隨機指標會是件很麻煩的事情。
@@ -198,7 +212,8 @@ stockData <- stockData %>%
 # 觀看資料
 stockData %>% 
   select(code, date, macd:signal) %>% 
-  arrange(code, date)
+  arrange(code, date) %>%
+  na.omit()
 ```
 
 和隨機指標寫法架構一樣，`tq_mutate()`函數內的`nFast`、`nSlow`及`nSig`引數即為原`TTR`套件`MACD()`的引數。
@@ -207,7 +222,7 @@ stockData %>%
 
 ## 計算績效指標寫法示範
 
-在計算績效指標時，我們需先將各檔股票股價資料整理成報酬率資料，並額外整理出臺灣加權指數報酬率做為市場報酬率。
+有時我們會想要計算每個股票的績效指標，進行一些財務分析(例如建構投資組合及股票評價等)。`tidyquant`套件完美地整合`PerformanceAnalytics`套件，讓我們很方便地去計算績效指標。在計算績效指標時，我們需先將各檔股票股價資料整理成報酬率資料，並額外整理出臺灣加權指數報酬率做為市場報酬率，資料整理範例如下：
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
@@ -233,7 +248,7 @@ stockRet <- stockRet %>%
   left_join(mktRet, by = c("date" = "date"))
 ```
 
-整理完後的資料，每個資產在每個交易日都有日報酬率和當日的市場報酬率，如下所示：
+整理完後的資料，每個資產在每個交易日都有日報酬率和當日對應的市場報酬率，如下所示：
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
 stockRet
@@ -241,11 +256,11 @@ stockRet
 
 接下來示範如何計算績效指標，主要是透過`tq_performance()`函數，其引數依序為:
 
-1. data: 資料集
-2. Ra: 資產報酬率
-3. Rb: 市場基準報酬率
-4. performance_fun: 績效指標函數(`PerformanceAnalytics`套件)
-5. 績效指標函數之參數設定 
+1. data: 資料集。
+2. Ra: 資產報酬率。
+3. Rb: 市場基準報酬率。
+4. performance_fun: 績效指標函數(`PerformanceAnalytics`套件)。
+5. 績效指標函數之參數設定。 
 
 以計算常用的夏普比率為例，此處假設無風險年利率為1%，程式寫法如下。需注意的地方是，計算夏普比率時不需要用到市場報酬率，因此Rb的參數我們給NULL值。
 
@@ -283,11 +298,11 @@ capmTable
 
 上述計算績效指標時皆採用日頻資料，但一般常見的作法是用月頻資料來計算績效指標。在`tidyquant`套件中，使用`tq_transmute()`函數搭配原本`quantmod`套件內的`periodReturn()`函數，可以很輕易地對資料做頻率轉換。`tq_transmute()`的引數依序為:
 
-1. data: 資料集
-2. select: 選擇資料欄位
-3. mutate_fun: 套件函數
-4. col_rename: 新增的欄位名稱
-5. 套件函數之參數設定 
+1. data: 資料集。
+2. select: 選擇資料欄位。
+3. mutate_fun: 套件函數。
+4. col_rename: 新增的欄位名稱。
+5. 套件函數之參數設定。
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
 
@@ -301,6 +316,36 @@ stockMonthRet <- stockData %>%
 
 # 觀看資料
 stockMonthRet
+```
+
+如果想要計算季頻或年頻，只要在`period`參數改成`quarterly`或`yearly`即可：
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+# 轉換成季頻資料
+stockQuarterRet <- stockData %>%
+  group_by(code) %>%
+  tq_transmute(select = close,
+               mutate_fun = periodReturn,
+               col_rename = "monthRet",
+               period = "quarterly")
+
+# 觀看資料
+stockQuarterRet
+```
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+# 轉換成年頻資料
+stockYearRet <- stockData %>%
+  group_by(code) %>%
+  tq_transmute(select = close,
+               mutate_fun = periodReturn,
+               col_rename = "monthRet",
+               period = "yearly")
+
+# 觀看資料
+stockYearRet
 ```
 
 --------------------------------------------------
@@ -377,11 +422,6 @@ stockData %>%
 ## 結語
 
 從上述的範例中，可以看到`tidyquant`套件很棒地將財務套件與`tidyverse`套件完美地結合。不用再寫太多複雜的程式和迴圈，繞來繞去地去計算每支股票的技術指標和績效指標。這個套件的整合，對於用R語言做財務分析的使用者來說真是一大福音！本篇文章僅擷取`tidyquant`套件最重要的部分，但原作者撰寫的說明文章還有更多細節及應用，對於此套件有興趣的讀者，建議可去點閱來看。
-
-
-
-
-
 
 
 
