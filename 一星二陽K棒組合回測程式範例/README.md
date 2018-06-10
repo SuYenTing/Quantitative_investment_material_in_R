@@ -12,4 +12,4 @@
 
 回測程式範例以R軟體的Markdown撰寫出來，點選 **Kbar_backtest_example.md** 檔案即可觀看回測程式範例。
 
-![一星二陽圖形](一星二陽K棒組合回測程式範例/graph/KbarGraph.png)
+![一星二陽圖形](Quant_base_programing一星二陽K棒組合回測程式範例/graph/KbarGraph.png)
