@@ -1,118 +1,118 @@
-# ª¦¨ú©_¼¯¹q¼v¸ê°T
-# µ{¦¡¼¶¼g: Ä¬«Û®x
+# çˆ¬å–å¥‡æ‘©é›»å½±è³‡è¨Š
+# ç¨‹å¼æ’°å¯«: è˜‡å½¥åº­
 library(rvest)
 library(dplyr)
 library(xlsx)
 library(RMySQL)
 
-# «Ø¥ßÀx¦sªí
+# å»ºç«‹å„²å­˜è¡¨
 movieData <- NULL  
 
-# ¤U¸ü¤W¬M¤¤¤Î§Y±N¤W¬Mªº¹q¼v¸ê°T
-# intheaters:¤W¬M¤¤
-# comingsoon:§Y±N¤W¬M
+# ä¸‹è¼‰ä¸Šæ˜ ä¸­åŠå³å°‡ä¸Šæ˜ çš„é›»å½±è³‡è¨Š
+# intheaters:ä¸Šæ˜ ä¸­
+# comingsoon:å³å°‡ä¸Šæ˜ 
 for(webPageName in c("intheaters","comingsoon")){
   
-  # ³]©w°_©l­È
+  # è¨­å®šèµ·å§‹å€¼
   ix <- 1            
   while(T){
     
-    cat(paste0("¥¿¦bª¦¨ú ",webPageName," ²Ä ",ix," ­Ó­¶­±\n"))
+    cat(paste0("æ­£åœ¨çˆ¬å– ",webPageName," ç¬¬ ",ix," å€‹é é¢\n"))
     
-    # ºô§}
+    # ç¶²å€
     url <- paste0("https://movies.yahoo.com.tw/movie_",webPageName,".html?page=",ix)
     
-    # ¹q¼v¤¤¤å¦WºÙ
+    # é›»å½±ä¸­æ–‡åç¨±
     movieName <- read_html(url, encoding = "utf-8") %>%
       html_nodes(css=".release_movie_name > .gabtn") %>%  
       html_text() %>%
       gsub("\\s","",.)
     
     if(length(movieName)==0){
-      cat(paste0("ª¦¨úµ²§ô\n"))
+      cat(paste0("çˆ¬å–çµæŸ\n"))
       break
     }
     
-    # ¹q¼v­^¤å¦WºÙ
+    # é›»å½±è‹±æ–‡åç¨±
     movieEngName <- read_html(url, encoding = "utf-8") %>%
       html_nodes(css=".en .gabtn") %>%  
       html_text() %>%
       gsub("\\s","",.)
     
-    # ¹q¼v¤W¬M¤é´Á
+    # é›»å½±ä¸Šæ˜ æ—¥æœŸ
     movieReleasedDate <- read_html(url, encoding = "utf-8") %>%
       html_nodes(css=".release_movie_time") %>%  
       html_text() %>%
-      gsub("¤W¬M¤é´Á ¡G ","",.)
+      gsub("ä¸Šæ˜ æ—¥æœŸ ï¼š ","",.)
     
-    # ¹q¼v¸Ô²Ó¤º®e³sµ²
+    # é›»å½±è©³ç´°å…§å®¹é€£çµ
     movieLink <- read_html(url, encoding = "utf-8") %>%
       html_nodes(css=".release_text a") %>%  
       html_attr("href")
     
-    # ¹q¼v¹Ï¤ù³sµ²
+    # é›»å½±åœ–ç‰‡é€£çµ
     imgLink <- read_html(url, encoding = "utf-8") %>%
       html_nodes(css="#content_l img") %>%  
       html_attr("src")
     
-    # Àx¦s¸ê°T
+    # å„²å­˜è³‡è¨Š
     movieData <- bind_rows(movieData, 
                            tibble(webPageName, movieName, movieEngName, movieReleasedDate, movieLink, imgLink))
     
-    # ¶i¤J¤U¤@¦¸°j°é
+    # é€²å…¥ä¸‹ä¸€æ¬¡è¿´åœˆ
     ix <- ix+1
     
-    # ¼È½w
+    # æš«ç·©
     Sys.sleep(1)
   }
 }
 
-# ¹ï¹q¼v¦WºÙ°µÂà´«¦¨big5¡AÁ×§K«İ·|Àx¦sÀÉ¦W®É³ø¿ù
+# å°é›»å½±åç¨±åšè½‰æ›æˆbig5ï¼Œé¿å…å¾…æœƒå„²å­˜æª”åæ™‚å ±éŒ¯
 movieData$movieGraphName <- iconv(movieData$movieName, from="utf8", to="big5", sub="byte") %>%
   gsub("<","", .) %>%
   gsub(">","", .) %>%
   gsub("/","", .)
 
-# «Ø¥ßÀx¦sªí
-movieData$movieLength <- rep(NA, nrow(movieData))       # ¹q¼v¤ùªø
-movieData$movieDirector <- rep(NA, nrow(movieData))     # ¹q¼v¾Éºt
-movieData$movieActor <- rep(NA, nrow(movieData))        # ¹q¼vºt­û
-movieData$movieAbstract <- rep(NA, nrow(movieData))     # ¹q¼vºK­n
-movieData$movieType1 <- rep(NA, nrow(movieData))        # ¹q¼vÃş«¬1
-movieData$movieType2 <- rep(NA, nrow(movieData))        # ¹q¼vÃş«¬2
-movieData$movieType3 <- rep(NA, nrow(movieData))        # ¹q¼vÃş«¬3
-movieData$movieType4 <- rep(NA, nrow(movieData))        # ¹q¼vÃş«¬4
-movieData$movieType5 <- rep(NA, nrow(movieData))        # ¹q¼vÃş«¬5
-movieData$moviePreviewLink <- rep(NA, nrow(movieData))  # ¹q¼v³sµ²
+# å»ºç«‹å„²å­˜è¡¨
+movieData$movieLength <- rep(NA, nrow(movieData))       # é›»å½±ç‰‡é•·
+movieData$movieDirector <- rep(NA, nrow(movieData))     # é›»å½±å°æ¼”
+movieData$movieActor <- rep(NA, nrow(movieData))        # é›»å½±æ¼”å“¡
+movieData$movieAbstract <- rep(NA, nrow(movieData))     # é›»å½±æ‘˜è¦
+movieData$movieType1 <- rep(NA, nrow(movieData))        # é›»å½±é¡å‹1
+movieData$movieType2 <- rep(NA, nrow(movieData))        # é›»å½±é¡å‹2
+movieData$movieType3 <- rep(NA, nrow(movieData))        # é›»å½±é¡å‹3
+movieData$movieType4 <- rep(NA, nrow(movieData))        # é›»å½±é¡å‹4
+movieData$movieType5 <- rep(NA, nrow(movieData))        # é›»å½±é¡å‹5
+movieData$moviePreviewLink <- rep(NA, nrow(movieData))  # é›»å½±é€£çµ
 
-# ¤U¸ü¹q¼v¹Ï¤ù¤Î¸Ô²Ó¸ê®Æ
+# ä¸‹è¼‰é›»å½±åœ–ç‰‡åŠè©³ç´°è³‡æ–™
 for(ix in 1:nrow(movieData)){
   
-  # ¤U¸ü¹q¼v¹Ï¤ù
-  cat(paste0("¥¿¦b¤U¸ü²Ä",ix,"­Ó¹q¼v®ü³ø¹Ï¡A¶i«×¡G",ix," / ",nrow(movieData),"\n"))
+  # ä¸‹è¼‰é›»å½±åœ–ç‰‡
+  cat(paste0("æ­£åœ¨ä¸‹è¼‰ç¬¬",ix,"å€‹é›»å½±æµ·å ±åœ–ï¼Œé€²åº¦ï¼š",ix," / ",nrow(movieData),"\n"))
   download.file(movieData$imgLink[ix],
                 destfile=paste0("./movieData/graph/",movieData$movieGraphName[ix],".jpg"),
                 mode="wb")
   
-  # ¤U¸ü¹q¼v¸Ô²Ó¸ê®Æ
+  # ä¸‹è¼‰é›»å½±è©³ç´°è³‡æ–™
   url <- movieData$movieLink[ix]
   movieDetail <- read_html(url, encoding = "utf-8") %>%
     html_nodes(css=".gray_infobox_inner , .movie_intro_list , span:nth-child(6)") %>%  
     html_text()
   
-  # ¹q¼v¤ùªø
-  movieData$movieLength[ix] <- movieDetail[1] %>% gsub("¤ù¡@¡@ªø¡G", "", .)
+  # é›»å½±ç‰‡é•·
+  movieData$movieLength[ix] <- movieDetail[1] %>% gsub("ç‰‡ã€€ã€€é•·ï¼š", "", .)
   
-  # ¹q¼v¾Éºt
+  # é›»å½±å°æ¼”
   movieData$movieDirector[ix] <- movieDetail[2] %>% gsub(" ", "", .) %>% gsub("\n", "", .)
   
-  # ¹q¼vºt­û
+  # é›»å½±æ¼”å“¡
   movieData$movieActor[ix] <- movieDetail[3] %>% gsub(" ", "", .) %>% gsub("\n", "", .)
   
-  # ¹q¼vºK­n
-  movieData$movieAbstract[ix] <- movieDetail[4] %>% gsub("¸Ô¥ş¤å", "", .)
+  # é›»å½±æ‘˜è¦
+  movieData$movieAbstract[ix] <- movieDetail[4] %>% gsub("è©³å…¨æ–‡", "", .)
   
-  # ¹q¼vÃş«¬
+  # é›»å½±é¡å‹
   movieType <- read_html(url, encoding = "utf-8") %>%
     html_nodes(css=".level_name .gabtn") %>%  
     html_text() %>% 
@@ -124,7 +124,7 @@ for(ix in 1:nrow(movieData)){
   movieData$movieType4[ix] <- movieType[4]
   movieData$movieType5[ix] <- movieType[5]
   
-  # ¹q¼v¹w§i³sµ²
+  # é›»å½±é å‘Šé€£çµ
   moviePreviewLink <- read_html(url, encoding= "utf-8") %>%
     html_nodes(css=".select+ li .gabtn") %>%  
     html_attr("href") %>%
@@ -135,26 +135,18 @@ for(ix in 1:nrow(movieData)){
   movieData$moviePreviewLink[ix] <- moviePreviewLink
 }
 
-# ¼g¥XÀÉ®×
-write.xlsx(movieData, file=paste0("./movieData/¹q¼v¸ê°T.xlsx"))
+# å¯«å‡ºæª”æ¡ˆ
+write.xlsx(movieData, file=paste0("./movieData/é›»å½±è³‡è¨Š.xlsx"))
 
-# ºK­n¸ê®Æ²M²z
+# æ‘˜è¦è³‡æ–™æ¸…ç†
 movieData$movieAbstract <- gsub("\n","",movieData$movieAbstract)
 movieData$movieAbstract <- gsub("\r","",movieData$movieAbstract)
 movieData$movieAbstract <- gsub(" ","",movieData$movieAbstract)
 movieData$movieAbstract <- gsub("<U+00A0>","",movieData$movieAbstract)
 
-# ¸ê®Æ³sµ²¾ã²z
+# è³‡æ–™é€£çµæ•´ç†
 movieData$moviePreviewLink[which(movieData$moviePreviewLink=="?format=embed")] <- NA
 
-# ¼g¤J¸ê®Æ®w
-filePath <- "C:/Users/Su-Yen-Ting/Desktop"
-con <- dbConnect(dbDriver("MySQL"), host="140.117.70.217",user='yen_ting',password='quant')
-write.table(movieData, paste0(filePath,"/movie_data.txt"),
-            sep = "\t",row.names = FALSE,col.names = FALSE,quote = FALSE,fileEncoding ="utf8")
-dbSendQuery(con,"SET SQL_SAFE_UPDATES=0;")
-dbSendQuery(con,"TRUNCATE movie.movie_data;")
-dbSendQuery(con, paste0("load data local infile '",filePath,"/movie_data.txt' into table movie.movie_data LINES TERMINATED BY '\r\n';"))
-dbDisconnect(con)
+
 
 
